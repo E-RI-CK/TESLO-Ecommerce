@@ -8,7 +8,7 @@
     "build": "yarn prisma:deploy && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:deploy": "yarn prisma migrate deploy && prisma generate",
+    "prisma:deploy": "npx prisma migrate deploy && prisma generate",
     "seed": "ts-node src/seed/seed-database.ts"
   },
   "dependencies": {
