@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn prisma:deploy && next build",
     "start": "next start",
     "lint": "next lint",
+    "prisma:deploy": "yarn prisma migrate deploy && yarn prisma generate",
     "seed": "ts-node src/seed/seed-database.ts"
   },
   "dependencies": {
