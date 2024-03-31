@@ -1,0 +1,125 @@
+'use client';
+
+import { placeOrder } from "@/actions";
+import { useAddressStore, useCartStore } from "@/store";
+import { currencyFormat } from "@/utils";
+import clsx from "clsx";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+export const PlaceOrder = () => {
+
+    const router = useRouter();
+    const [loaded, setLoaded] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [isPlacedOrder, setIsPlacedOrder] = useState(false);
+
+    const address = useAddressStore(state => state.address);
+    //console.log(address);
+
+    const { itemsInCart, subTotal, igv, total } = useCartStore(state => state.getSummaryInformation());
+    const cart = useCartStore(state => state.cart);
+    const clearCart = useCartStore(state =>state.clearCart);
+
+    useEffect(() => {
+        setLoaded(true);
+    }, []);
+
+    const onPlaceOrder = async () => {
+        setIsPlacedOrder(true);
+
+        const productsToOrder = cart.map(product => ({
+            productId: product.id,
+            quantity: product.quantity,
+            size: product.size
+        }))
+
+        //console.log(address, productsToOrder);
+
+
+        //! Server Action
+
+        const res = await placeOrder(productsToOrder, address);
+
+        if (!res.ok) {
+            setIsPlacedOrder(false);
+            setErrorMessage(res.message);
+            return;
+        }
+
+        //* Todo salio bien!
+
+        clearCart();
+        router.replace('/orders/' + res.order?.id);
+    }
+
+    if (!loaded) {
+        return <p>Cargando...</p>
+    }
+
+    return (
+        <div className="bg-white rounded-xl shadow-xl p-7">
+
+            <h2 className="text-2xl mb-2">Dirección de Entrega</h2>
+
+            <div className="mb-10">
+                <p className="text-xl">
+                    {address.firstName} {address.lastName}
+                </p>
+                <p>{address.address}</p>
+                <p>{address.address2}</p>
+                <p>{address.postalCode}</p>
+                <p>
+                    {address.city}, {address.country}
+                </p>
+                <p>{address.phone}</p>
+            </div>
+
+            {/* Divider */}
+
+            <div
+                className="w-full h-0.5 rounded bg-gray-200 mb-10"
+            />
+
+            <h2 className="text-2xl mb-2">Resumen de orden</h2>
+            <div className="grid grid-cols-2">
+                <span>No. Productos</span>
+                <span className="text-right">{itemsInCart === 1 ? '1 artículo' : `${itemsInCart} artículos`}</span>
+
+                <span>Subtotal</span>
+                <span className="text-right">{currencyFormat(subTotal)}</span>
+
+                <span>Impuestos (15%)</span>
+                <span className="text-right">{currencyFormat(igv)}</span>
+
+                <span className="mt-5 text-2xl">Total</span>
+                <span className="mt-5 text-2xl text-right">{currencyFormat(total)}</span>
+            </div>
+
+            <div className="mt-5 mb-2 w-full">
+
+                <p className="mb-5">
+                    {/* Disclaimer */}
+                    <span className="text-xs">
+                        Al hacer click en &quot;Colocar orden&quot;, aceptas nuestros <a href="#" className="underline">términos y condiciones</a> y <a href="#" className="underline">política de privacidad</a>
+                    </span>
+                </p>
+
+                <p className="text-red-500 mb-3">{errorMessage}</p>
+
+                <button
+                    className={
+                        clsx({
+                            'btn-primary': !isPlacedOrder,
+                            'btn-disabled': isPlacedOrder
+                        })
+                    }
+                    onClick={onPlaceOrder}
+                //href="/orders/123"
+                >
+                    Colocar  Orden
+                </button>
+            </div>
+        </div>
+    )
+}
